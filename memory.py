@@ -1,11 +1,11 @@
 ﻿"""Thin wrapper around Hindsight so the rest of the app stays simple."""
 import os
 
-import nest_asyncio
+
 from dotenv import load_dotenv
 from hindsight_client import Hindsight
 
-nest_asyncio.apply()
+
 load_dotenv()
 
 BANK = os.getenv("MEMORY_BANK", "acme-sre")
