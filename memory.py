@@ -8,10 +8,21 @@ load_dotenv()
 
 BANK = os.getenv("MEMORY_BANK", "acme-sre")
 
-_kwargs = {"base_url": os.getenv("HINDSIGHT_BASE_URL", "http://localhost:8888")}
-if os.getenv("HINDSIGHT_API_KEY"):
-    _kwargs["api_key"] = os.getenv("HINDSIGHT_API_KEY")
-client = Hindsight(**_kwargs)
+
+def _client():
+    """Make a fresh client per call (a shared one breaks when Streamlit re-runs)."""
+    kwargs = {"base_url": os.getenv("HINDSIGHT_BASE_URL", "http://localhost:8888")}
+    if os.getenv("HINDSIGHT_API_KEY"):
+        kwargs["api_key"] = os.getenv("HINDSIGHT_API_KEY")
+    return Hindsight(**kwargs)
+
+
+def _with_retry(fn):
+    """Run fn(client); if the event loop is stale, retry once with a new client."""
+    try:
+        return fn(_client())
+    except RuntimeError:
+        return fn(_client())
 
 
 def remember(text, context=None, timestamp=None):
@@ -21,15 +32,15 @@ def remember(text, context=None, timestamp=None):
         kw["context"] = context
     if timestamp:
         kw["timestamp"] = timestamp
-    return client.retain(**kw)
+    return _with_retry(lambda c: c.retain(**kw))
 
 
 def recall(query):
     """RECALL: look up relevant memories. Returns a list of memory texts."""
-    results = client.recall(bank_id=BANK, query=query)
+    results = _with_retry(lambda c: c.recall(bank_id=BANK, query=query))
     return [r.text for r in results.results]
 
 
 def reflect(question):
     """REFLECT: ask Hindsight to find patterns across all memories."""
-    return client.reflect(bank_id=BANK, query=question)
+    return _with_retry(lambda c: c.reflect(bank_id=BANK, query=question))
