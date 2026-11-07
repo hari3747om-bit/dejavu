@@ -1,10 +1,8 @@
 ﻿"""Thin wrapper around Hindsight so the rest of the app stays simple."""
 import os
 
-
 from dotenv import load_dotenv
 from hindsight_client import Hindsight
-
 
 load_dotenv()
 
