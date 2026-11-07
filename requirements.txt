@@ -1,0 +1,5 @@
+hindsight-client
+openai
+streamlit
+python-dotenv
+nest_asyncio
